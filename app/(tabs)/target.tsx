@@ -1,12 +1,19 @@
-import { Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
+import ImgCard from "../components/ImgCard";
 
 export default function TargetScreen() {
   return (
     <View className="flex-1 justify-center items-center bg-gray-100">
-      <Text className="text-2xl font-bold text-gray-800 mb-8">목표</Text>
-      <Text className="text-lg text-gray-600 text-center px-4">
-        목표 설정 화면입니다
-      </Text>
+      <ScrollView className="w-full">
+        <View className="pt-8 p-4">
+          <Text className="text-2xl font-bold text-gray-800 mb-8">
+            USER님을 위한 추천 식단
+          </Text>
+        </View>
+        <View className="items-center">
+          <ImgCard />
+        </View>
+      </ScrollView>
     </View>
   );
 }

@@ -3,7 +3,7 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 
 const Card = () => {
   return (
-    <View className="bg-white rounded-lg overflow-hidden shadow-lg m-4">
+    <View className="bg-white rounded-lg overflow-hidden shadow-lg m-4 w-11/12 max-w-md">
       <Image
         source={require("../../assets/images/fff.png")}
         className="w-full h-52"

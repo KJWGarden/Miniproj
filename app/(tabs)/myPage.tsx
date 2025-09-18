@@ -5,7 +5,9 @@ export default function TabTwoScreen() {
   return (
     <View className="flex-1 justify-center items-center bg-gray-100">
       <Text className="text-2xl font-bold text-gray-800 mb-8">마이페이지</Text>
-      <Card />
+      <View className="w-full items-center">
+        <Card />
+      </View>
     </View>
   );
 }
