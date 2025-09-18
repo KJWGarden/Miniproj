@@ -8,6 +8,7 @@ import { Pressable, View } from "react-native";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import { useColorScheme } from "@/components/useColorScheme";
 import Colors from "@/constants/Colors";
+import Entypo from "@expo/vector-icons/build/Entypo";
 import GalaxyTab from "../components/GalaxyTab";
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
@@ -81,6 +82,15 @@ export default function TabLayout() {
               );
             },
             tabBarStyle: { display: "none" }, // 카메라 화면에서만 탭바 숨기기
+          }}
+        />
+        <Tabs.Screen
+          name="aiChat"
+          options={{
+            title: "AI챗",
+            tabBarIcon: ({ color }) => (
+              <Entypo name="chat" size={24} color="black" />
+            ),
           }}
         />
         <Tabs.Screen

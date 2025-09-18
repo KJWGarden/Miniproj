@@ -1,3 +1,4 @@
+import Entypo from "@expo/vector-icons/Entypo";
 import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -15,7 +16,7 @@ const Tab = ({ currentPath }: GalaxyTabProps) => {
     { name: "home", route: "/(tabs)/home" },
     { name: "target", route: "/(tabs)/target" },
     { name: "camera", route: "/(tabs)/camera" },
-    { name: "user", route: "/(tabs)/myPage" },
+    { name: "chat", route: "/(tabs)/aiChat" },
     { name: "settings", route: "/(tabs)/settings" },
   ];
 
@@ -65,11 +66,19 @@ const Tab = ({ currentPath }: GalaxyTabProps) => {
               activeTab === index ? "bg-white" : "bg-transparent"
             }`}
           >
-            <Feather
-              name={tab.name as any}
-              size={24}
-              color={activeTab === index ? "#000000" : "white"}
-            />
+            {tab.name === "chat" ? (
+              <Entypo
+                name="chat"
+                size={24}
+                color={activeTab === index ? "#000000" : "white"}
+              />
+            ) : (
+              <Feather
+                name={tab.name as any}
+                size={24}
+                color={activeTab === index ? "#000000" : "white"}
+              />
+            )}
           </Pressable>
         ))}
       </View>

@@ -33,7 +33,7 @@ export default function TabOneScreen() {
     <View className="flex-1 bg-gray-100">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ alignItems: "center", paddingBottom: 20 }}
+        contentContainerStyle={{ alignItems: "center", paddingBottom: 150 }}
       >
         <View className="flex-row items-center justify-center mt-8">
           <View className="items-center">
@@ -55,7 +55,7 @@ export default function TabOneScreen() {
         <View className="w-full flex justify-center items-center mt-4">
           <NutritionalComposition />
         </View>
-        <View className="w-full flex justify-center items-center mt-4">
+        <View className="w-full flex justify-center items-center mt-4 gap-4">
           {Data.map((item) => (
             <InputCard
               key={item.index}
