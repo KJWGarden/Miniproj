@@ -4,4 +4,6 @@
 
 REACT NATIVE 기반 모바일 플랫폼
 
+<img src="./assets/images/icon.png" width="200" height="200"/>
+
 건강관련 플랫폼, 사용자에게 맞춤 식단 추천 및 레시피 제공, 레시피에 필요한 재료 구매 페이지 까지 연결
