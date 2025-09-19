@@ -40,7 +40,7 @@ const menuList = [
   {
     id: 7,
     title: "앱 버전 정보",
-    subTitle: "1.0.0",
+    subTitle: "0.0.1",
     pressable: false,
   },
   {
