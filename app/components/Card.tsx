@@ -5,7 +5,7 @@ const Card = () => {
   return (
     <View className="bg-white rounded-lg overflow-hidden shadow-lg m-4 w-11/12 max-w-md">
       <Image
-        source={require("../../assets/images/fff.png")}
+        source={require("../../assets/images/www.png")}
         className="w-full h-52"
         resizeMode="cover"
       />
