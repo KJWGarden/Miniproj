@@ -1,4 +1,5 @@
 import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
   ScrollView,
   Text,
@@ -6,17 +7,41 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import TermsOfService from "./TermsOfService";
 
 const Form = () => {
   const router = useRouter();
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
+  const handleTermsAccept = () => {
+    setTermsAccepted(true);
+  };
+
+  // 약관에 동의하지 않은 경우 약관 화면 표시
+  if (!termsAccepted) {
+    return <TermsOfService onAccept={handleTermsAccept} />;
+  }
+
+  // 약관 동의 후 회원가입 폼 표시
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <View className="flex-1 justify-center items-center py-20 px-4">
         <View className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
-          <Text className="text-2xl font-bold text-center text-gray-800 mb-6">
-            회원가입
-          </Text>
+          <View className="flex-col w-full h-[50px] items-center mb-4">
+            <View className="w-full justify-start">
+              <TouchableOpacity
+                onPress={() => setTermsAccepted(false)}
+                className="pb-2"
+              >
+                <Text className="text-teal-500 font-medium">← 약관으로</Text>
+              </TouchableOpacity>
+            </View>
+            <View>
+              <Text className="text-2xl font-bold text-center text-gray-800 flex-1">
+                회원가입
+              </Text>
+            </View>
+          </View>
 
           <View className="space-y-4">
             <View className="pb-2">
