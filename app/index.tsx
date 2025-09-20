@@ -8,7 +8,7 @@ export default function WelcomeScreen() {
   useEffect(() => {
     // 3초 후에 메인 화면으로 이동
     const timer = setTimeout(() => {
-      router.replace("/(tabs)/home");
+      router.replace("/login");
     }, 3000);
 
     return () => clearTimeout(timer);
