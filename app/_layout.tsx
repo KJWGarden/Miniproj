@@ -22,7 +22,7 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: "index", // index.tsx를 시작 페이지로 설정
+  initialRouteName: "(tabs)", // 탭 네비게이션을 시작 페이지로 설정
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.

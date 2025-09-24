@@ -1,14 +1,65 @@
 import { useRouter } from "expo-router";
+import React, { useState } from "react";
 import {
+  Alert,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { authService, LoginRequest } from "../../services/authService";
+import { StorageService } from "../../utils/storage";
 
 const Form = () => {
   const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert("오류", "이메일과 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const loginData: LoginRequest = {
+        email: email.trim(),
+        password: password,
+      };
+
+      const response = await authService.login(loginData);
+
+      if (response.success && response.data) {
+        // 로그인 성공
+        Alert.alert("성공", "로그인되었습니다!", [
+          {
+            text: "확인",
+            onPress: async () => {
+              // 토큰과 사용자 정보 저장 (안전하게 처리)
+              if (response.data?.token) {
+                await StorageService.setAuthToken(response.data.token);
+              }
+              if (response.data?.user) {
+                await StorageService.setUserData(response.data.user);
+              }
+              // 메인 화면으로 이동
+              router.replace("/(tabs)/home");
+            },
+          },
+        ]);
+      } else {
+        Alert.alert("로그인 실패", response.error || "로그인에 실패했습니다.");
+      }
+    } catch (error) {
+      Alert.alert("오류", "네트워크 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -26,6 +77,8 @@ const Form = () => {
               <TextInput
                 placeholder="name@example.com"
                 keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
                 className="w-full px-3 py-2 border border-gray-300 rounded mt-1"
               />
             </View>
@@ -37,13 +90,21 @@ const Form = () => {
               <TextInput
                 placeholder="Enter Password"
                 secureTextEntry
+                value={password}
+                onChangeText={setPassword}
                 className="w-full px-3 py-2 border border-gray-300 rounded mt-1"
               />
             </View>
 
-            <TouchableOpacity className="bg-black py-3 rounded mt-4">
+            <TouchableOpacity
+              className={`py-3 rounded mt-4 ${
+                isLoading ? "bg-gray-400" : "bg-black"
+              }`}
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
               <Text className="text-white text-center font-semibold">
-                Login
+                {isLoading ? "로그인 중..." : "Login"}
               </Text>
             </TouchableOpacity>
           </View>

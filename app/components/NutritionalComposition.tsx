@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import ProgressBar from "./ProgressBar";
+import ProgressBar from "./NutritionProgressBar";
 
 export default function NutritionalComposition() {
   return (

@@ -1,21 +1,22 @@
 import React from "react";
 import { View } from "react-native";
 
-const ProgressBar = (props: {
-  recommend: number;
-  eat: number;
-  color: string;
-}) => {
+interface ProgressBarProps {
+  progress: number; // 0-100 사이의 값
+  color?: string; // 선택적 색상
+}
+
+const ProgressBar = ({ progress, color = "bg-blue-500" }: ProgressBarProps) => {
+  // progress 값을 0-100 사이로 제한
+  const clampedProgress = Math.min(Math.max(progress, 0), 100);
+
   return (
-    <View>
-      <View className="mt-2 h-2 w-full rounded-full bg-gray-300 overflow-hidden">
+    <View className="w-full">
+      <View className="h-2 w-full rounded-full bg-gray-200 overflow-hidden shadow-sm">
         <View
-          className="h-full rounded-full"
-          style={{
-            backgroundColor: props.color,
-            width: `${(props.eat / props.recommend) * 100}%`,
-          }}
-        />
+          className={`h-full rounded-full ${color}`}
+          style={{ width: `${clampedProgress}%` }}
+        ></View>
       </View>
     </View>
   );
