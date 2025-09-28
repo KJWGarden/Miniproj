@@ -1,5 +1,6 @@
 // utils/storage.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { UserInitialInfo } from "../services/authService";
 
 export class StorageService {
   // 토큰 저장
@@ -50,10 +51,35 @@ export class StorageService {
     }
   }
 
+  // 사용자 초기 정보 저장
+  static async setUserInitialInfo(
+    userInitialInfo: UserInitialInfo
+  ): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        "userInitialInfo",
+        JSON.stringify(userInitialInfo)
+      );
+    } catch (error) {
+      console.error("사용자 초기 정보 저장 실패:", error);
+    }
+  }
+
+  // 사용자 초기 정보 가져오기
+  static async getUserInitialInfo(): Promise<UserInitialInfo | null> {
+    try {
+      const userInitialInfo = await AsyncStorage.getItem("userInitialInfo");
+      return userInitialInfo ? JSON.parse(userInitialInfo) : null;
+    } catch (error) {
+      console.error("사용자 초기 정보 가져오기 실패:", error);
+      return null;
+    }
+  }
+
   // 로그아웃 (모든 데이터 삭제)
   static async clearAll(): Promise<void> {
     try {
-      await AsyncStorage.multiRemove(["authToken", "users"]);
+      await AsyncStorage.multiRemove(["authToken", "users", "userInitialInfo"]);
     } catch (error) {
       console.error("데이터 삭제 실패:", error);
     }

@@ -7,12 +7,12 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  name: string;
-  username: string;
+  id: string;
   email: string;
+  username: string;
   phone: string;
   password: string;
-  confirmPassword: string;
+  password_confirm: string;
 }
 
 export interface User {
@@ -27,6 +27,29 @@ export interface User {
 export interface AuthResponse {
   user: User;
   token: string;
+}
+
+// 사용자 초기 정보 타입
+export interface EatLevel {
+  breakfast: number;
+  lunch: number;
+  dinner: number;
+}
+
+export interface UserInitialInfo {
+  gender: string;
+  age: number;
+  height: number;
+  weight: number;
+  activity_level: string;
+  goal: string;
+  preferred_food: string[];
+  allergies: string[];
+  eat_level: EatLevel;
+}
+
+export interface UserInitialInfoResponse {
+  user_info: UserInitialInfo;
 }
 
 export class AuthService {
@@ -45,16 +68,14 @@ export class AuthService {
 
   // 회원가입
   async register(userData: RegisterRequest) {
-    const { name, username, email, phone, password, confirmPassword } =
-      userData;
+    const { id, email, username, phone, password, password_confirm } = userData;
     const params = new URLSearchParams({
-      id: email, // 서버가 id 필드를 요구하므로 email을 id로 사용
-      name,
-      username,
+      id,
       email,
+      username,
       phone,
       password,
-      password_confirm: confirmPassword, // 서버가 요구하는 필드명
+      password_confirm,
     });
     return await apiClient.post<AuthResponse>(
       `/users/signup?${params.toString()}`,
@@ -65,6 +86,19 @@ export class AuthService {
   // 로그아웃
   async logout(token: string) {
     return await apiClient.post("/auth/logout", { token });
+  }
+
+  // 사용자 초기 정보 가져오기
+  async getUserInitialInfo(token: string) {
+    return await apiClient.patch<UserInitialInfoResponse>(
+      "/users/initial/info",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
   }
 }
 

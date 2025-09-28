@@ -40,17 +40,24 @@ export class ApiClient {
   }
 
   // POST 요청
-  async post<T>(endpoint: string, body: any): Promise<ApiResponse<T>> {
+  async post<T>(
+    endpoint: string,
+    body: any,
+    options?: { headers?: Record<string, string> }
+  ): Promise<ApiResponse<T>> {
     try {
       const url = `${this.baseURL}${endpoint}`;
       console.log("POST 요청 URL:", url);
       console.log("POST 요청 데이터:", body);
 
+      const headers = {
+        "Content-Type": "application/json",
+        ...options?.headers,
+      };
+
       const response = await fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(body),
       });
 
@@ -65,8 +72,21 @@ export class ApiClient {
         );
       }
 
-      const data = await response.json();
-      console.log("POST 성공 응답:", data);
+      // 응답 타입에 따라 적절히 처리
+      const contentType = response.headers.get("content-type");
+      console.log("응답 Content-Type:", contentType);
+
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+        console.log("POST 성공 응답 (JSON):", data);
+      } else {
+        const textData = await response.text();
+        console.log("POST 성공 응답 (Text):", textData);
+        // 텍스트 응답을 JSON 형태로 변환
+        data = { message: textData };
+      }
+
       return { success: true, data };
     } catch (error) {
       console.log("POST 요청 실패:", error);
@@ -78,13 +98,20 @@ export class ApiClient {
   }
 
   // PUT 요청
-  async put<T>(endpoint: string, body: any): Promise<ApiResponse<T>> {
+  async put<T>(
+    endpoint: string,
+    body: any,
+    options?: { headers?: Record<string, string> }
+  ): Promise<ApiResponse<T>> {
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        ...options?.headers,
+      };
+
       const response = await fetch(`${this.baseURL}${endpoint}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(body),
       });
 
@@ -95,6 +122,50 @@ export class ApiClient {
       const data = await response.json();
       return { success: true, data };
     } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  }
+
+  // PATCH 요청
+  async patch<T>(
+    endpoint: string,
+    body: any,
+    options?: { headers?: Record<string, string> }
+  ): Promise<ApiResponse<T>> {
+    try {
+      const url = `${this.baseURL}${endpoint}`;
+      console.log("PATCH 요청 URL:", url);
+      console.log("PATCH 요청 데이터:", body);
+
+      const headers = {
+        "Content-Type": "application/json",
+        ...options?.headers,
+      };
+
+      const response = await fetch(url, {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify(body),
+      });
+
+      console.log("PATCH 응답 상태:", response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log("PATCH 오류 응답:", errorText);
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorText}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("PATCH 성공 응답:", data);
+      return { success: true, data };
+    } catch (error) {
+      console.log("PATCH 요청 실패:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : "Unknown error",

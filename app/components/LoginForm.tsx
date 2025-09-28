@@ -34,18 +34,43 @@ const Form = () => {
       const response = await authService.login(loginData);
 
       if (response.success && response.data) {
+        // 토큰과 사용자 정보 저장 (안전하게 처리)
+        if (response.data?.token) {
+          await StorageService.setAuthToken(response.data.token);
+        }
+        if (response.data?.user) {
+          await StorageService.setUserData(response.data.user);
+        }
+
+        // 사용자 초기 정보 가져오기
+        try {
+          const userInfoResponse = await authService.getUserInitialInfo(
+            response.data.token
+          );
+          if (userInfoResponse.success && userInfoResponse.data) {
+            // 사용자 초기 정보 저장
+            await StorageService.setUserInitialInfo(
+              userInfoResponse.data.user_info
+            );
+            console.log(
+              "사용자 초기 정보 저장 완료:",
+              userInfoResponse.data.user_info
+            );
+          } else {
+            console.log(
+              "사용자 초기 정보 가져오기 실패:",
+              userInfoResponse.error
+            );
+          }
+        } catch (error) {
+          console.log("사용자 초기 정보 가져오기 중 오류:", error);
+        }
+
         // 로그인 성공
         Alert.alert("성공", "로그인되었습니다!", [
           {
             text: "확인",
-            onPress: async () => {
-              // 토큰과 사용자 정보 저장 (안전하게 처리)
-              if (response.data?.token) {
-                await StorageService.setAuthToken(response.data.token);
-              }
-              if (response.data?.user) {
-                await StorageService.setUserData(response.data.user);
-              }
+            onPress: () => {
               // 메인 화면으로 이동
               router.replace("/(tabs)/home");
             },

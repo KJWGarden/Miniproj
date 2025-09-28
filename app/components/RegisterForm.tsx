@@ -9,11 +9,6 @@ import {
   View,
 } from "react-native";
 import { authService, RegisterRequest } from "../../services/authService";
-import {
-  debugNetworkRequest,
-  testSimpleConnection,
-} from "../../utils/debugNetwork";
-import { testEndpoints } from "../../utils/endpointTester";
 import { StorageService } from "../../utils/storage";
 import TermsOfService from "./TermsOfService";
 
@@ -26,7 +21,7 @@ const Form = () => {
     email: "",
     phone: "",
     password: "",
-    confirmPassword: "",
+    password_confirm: "",
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,15 +40,6 @@ const Form = () => {
     }
     if (!formData.username.trim()) {
       Alert.alert("오류", "사용자명을 입력해주세요.");
-      return false;
-    }
-    // 사용자명 형식 검증 (영문, 숫자, 언더스코어만 허용, 3-20자)
-    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-    if (!usernameRegex.test(formData.username)) {
-      Alert.alert(
-        "오류",
-        "사용자명은 영문, 숫자, 언더스코어만 사용 가능하며 3-20자여야 합니다."
-      );
       return false;
     }
     if (!formData.email.trim()) {
@@ -83,7 +69,7 @@ const Form = () => {
       Alert.alert("오류", "비밀번호를 입력해주세요.");
       return false;
     }
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password !== formData.password_confirm) {
       Alert.alert("오류", "비밀번호가 일치하지 않습니다.");
       return false;
     }
@@ -99,10 +85,6 @@ const Form = () => {
 
     setIsLoading(true);
 
-    // 네트워크 디버깅 시작
-    console.log("=== 회원가입 시도 시작 ===");
-    await debugNetworkRequest();
-
     try {
       // 전화번호 형식 변환 (01012341234 -> 010-1234-1234)
       const formatPhoneNumber = (phone: string) => {
@@ -116,12 +98,12 @@ const Form = () => {
       };
 
       const registerData: RegisterRequest = {
-        name: formData.name.trim(),
-        username: formData.username.trim(),
+        id: formData.name.trim(),
         email: formData.email.trim(),
+        username: formData.username.trim(),
         phone: formatPhoneNumber(formData.phone.trim()),
         password: formData.password,
-        confirmPassword: formData.confirmPassword,
+        password_confirm: formData.password_confirm,
       };
 
       console.log("전송할 데이터:", registerData);
@@ -130,10 +112,16 @@ const Form = () => {
       const response = await authService.register(registerData);
 
       console.log("서버 응답:", response);
+      console.log("응답 성공 여부:", response.success);
+      console.log("응답 데이터:", response.data);
+      console.log("응답 오류:", response.error);
 
       if (response.success && response.data) {
-        // 회원가입 성공
-        Alert.alert("성공", "회원가입이 완료되었습니다!", [
+        // 회원가입 성공 (JSON 응답 또는 텍스트 응답 모두 처리)
+        const successMessage =
+          (response.data as any)?.message || "회원가입이 완료되었습니다!";
+
+        Alert.alert("성공", successMessage, [
           {
             text: "확인",
             onPress: async () => {
@@ -157,7 +145,24 @@ const Form = () => {
       }
     } catch (error) {
       console.log("회원가입 오류 상세:", error);
-      Alert.alert("오류", `네트워크 오류가 발생했습니다: ${error}`);
+
+      // 서버 오류에 대한 더 구체적인 메시지 제공
+      let errorMessage = "회원가입 중 오류가 발생했습니다.";
+
+      if (error instanceof Error) {
+        if (error.message.includes("500")) {
+          errorMessage =
+            "서버에서 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        } else if (error.message.includes("422")) {
+          errorMessage = "입력한 정보를 다시 확인해주세요.";
+        } else if (error.message.includes("409")) {
+          errorMessage = "이미 사용 중인 이메일 또는 사용자명입니다.";
+        } else if (error.message.includes("network")) {
+          errorMessage = "네트워크 연결을 확인해주세요.";
+        }
+      }
+
+      Alert.alert("회원가입 실패", errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -192,10 +197,10 @@ const Form = () => {
           <View className="space-y-4">
             <View className="pb-2">
               <Text className="text-sm font-medium text-gray-700">
-                이름 <Text className="text-red-600">*</Text>
+                아이디를 <Text className="text-red-600">*</Text>
               </Text>
               <TextInput
-                placeholder="Enter FullName"
+                placeholder="Enter Username"
                 value={formData.name}
                 onChangeText={(value) => handleInputChange("name", value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded mt-1"
@@ -204,7 +209,7 @@ const Form = () => {
 
             <View className="pb-2">
               <Text className="text-sm font-medium text-gray-700">
-                사용자명 <Text className="text-red-600">*</Text>
+                이름을 <Text className="text-red-600">*</Text>
               </Text>
               <TextInput
                 placeholder="Enter Username"
@@ -261,9 +266,9 @@ const Form = () => {
               <TextInput
                 placeholder="Confirm Password"
                 secureTextEntry
-                value={formData.confirmPassword}
+                value={formData.password_confirm}
                 onChangeText={(value) =>
-                  handleInputChange("confirmPassword", value)
+                  handleInputChange("password_confirm", value)
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded mt-1"
               />
@@ -278,32 +283,6 @@ const Form = () => {
             >
               <Text className="text-white text-center font-semibold">
                 {isLoading ? "회원가입 중..." : "회원가입"}
-              </Text>
-            </TouchableOpacity>
-
-            {/* 네트워크 테스트 버튼 (개발용) */}
-            <TouchableOpacity
-              className="bg-blue-500 py-2 rounded mt-2"
-              onPress={async () => {
-                console.log("=== 네트워크 테스트 시작 ===");
-                await testSimpleConnection();
-                console.log("=== 네트워크 테스트 완료 ===");
-              }}
-            >
-              <Text className="text-white text-center font-semibold text-sm">
-                네트워크 테스트
-              </Text>
-            </TouchableOpacity>
-
-            {/* 엔드포인트 테스트 버튼 (개발용) */}
-            <TouchableOpacity
-              className="bg-green-500 py-2 rounded mt-2"
-              onPress={async () => {
-                await testEndpoints();
-              }}
-            >
-              <Text className="text-white text-center font-semibold text-sm">
-                엔드포인트 테스트
               </Text>
             </TouchableOpacity>
           </View>
