@@ -1,11 +1,14 @@
 // utils/api.ts
-const API_BASE_URL = "http://54.196.253.81:8000";
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8000";
 
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
+  headers?: {
+    map: { [key: string]: string };
+  };
 }
 
 export class ApiClient {
@@ -87,7 +90,13 @@ export class ApiClient {
         data = { message: textData };
       }
 
-      return { success: true, data };
+      return {
+        success: true,
+        data,
+        headers: {
+          map: Object.fromEntries(response.headers.entries()),
+        },
+      };
     } catch (error) {
       console.log("POST 요청 실패:", error);
       return {
@@ -137,13 +146,15 @@ export class ApiClient {
   ): Promise<ApiResponse<T>> {
     try {
       const url = `${this.baseURL}${endpoint}`;
-      console.log("PATCH 요청 URL:", url);
-      console.log("PATCH 요청 데이터:", body);
-
       const headers = {
         "Content-Type": "application/json",
         ...options?.headers,
       };
+
+      // 디버깅을 위한 임시 로그
+      console.log("PATCH 요청 URL:", url);
+      console.log("PATCH 요청 헤더:", headers);
+      console.log("PATCH 요청 데이터:", body);
 
       const response = await fetch(url, {
         method: "PATCH",

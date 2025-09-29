@@ -1,12 +1,16 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   KeyboardTypeOptions,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { authService, UserInitialInfo } from "../services/authService";
+import { StorageService } from "../utils/storage";
 import ProgressBar from "./components/ProgressBar";
+import { AlertDialogPreview } from "./components/RequsetPermission";
 import SurveyInput from "./components/SurveyInput";
 import SurveyList from "./components/SurveyList";
 import SurveyOften from "./components/SurveyOften";
@@ -28,6 +32,8 @@ export default function Survey() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [isInputValid, setIsInputValid] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const surveyQuestions: SurveyQuestion[] = [
     {
@@ -161,16 +167,136 @@ export default function Survey() {
     setIsInputValid(isValid);
   };
 
+  // 컴포넌트 마운트 시 토큰 확인
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = await StorageService.getAuthToken();
+
+        if (!token) {
+          Alert.alert("로그인 필요", "설문을 진행하려면 로그인이 필요합니다.", [
+            {
+              text: "확인",
+              onPress: () => {
+                router.replace("/login");
+              },
+            },
+          ]);
+          return;
+        }
+
+        setIsLoading(false);
+      } catch (error) {
+        console.error("토큰 확인 오류:", error);
+        Alert.alert("오류", "인증 확인 중 오류가 발생했습니다.", [
+          {
+            text: "확인",
+            onPress: () => {
+              router.replace("/login");
+            },
+          },
+        ]);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
   // 단계가 변경될 때마다 validation 상태 초기화
   useEffect(() => {
     setIsInputValid(true);
   }, [currentStep]);
 
+  // 설문 데이터를 UserInitialInfo 형식으로 변환
+  const transformSurveyData = (): UserInitialInfo | null => {
+    try {
+      // 성별
+      const gender = answers[0] || "";
+
+      // 나이 (생년월일에서 계산)
+      const birthDate = answers[1] || "";
+      const currentYear = new Date().getFullYear();
+      const birthYear = parseInt(birthDate.substring(0, 4));
+      const age = currentYear - birthYear;
+
+      // 키
+      const height = parseInt(answers[2] || "0");
+
+      // 몸무게
+      const weight = parseInt(answers[3] || "0");
+
+      // 활동 수준
+      const activity_level = answers[4] || "";
+
+      // 식사 수준 (UserInitialInfo 형식에 맞게 변환)
+      const eatLevelData = JSON.parse(answers[5] || "{}");
+      const eat_level = {
+        breakfast: eatLevelData.morning || "",
+        lunch: eatLevelData.lunch || "",
+        dinner: eatLevelData.dinner || "",
+      };
+
+      return {
+        gender,
+        age,
+        height,
+        weight,
+        activity_level,
+        goal: "", // 설문에 없으므로 빈 문자열
+        preferred_food: "", // 설문에 없으므로 빈 배열
+        allergies: [""], // 설문에 없으므로 빈 배열
+        eat_level,
+      };
+    } catch (error) {
+      console.error("설문 데이터 변환 실패:", error);
+      return null;
+    }
+  };
+
+  // 설문 데이터 서버 전송
+  const submitSurveyData = async () => {
+    setIsSubmitting(true);
+
+    try {
+      const token = await StorageService.getAuthToken();
+      if (!token) {
+        Alert.alert("오류", "로그인이 필요합니다.");
+        return;
+      }
+
+      const surveyData = transformSurveyData();
+      if (!surveyData) {
+        Alert.alert("오류", "설문 데이터를 처리할 수 없습니다.");
+        return;
+      }
+
+      const response = await authService.submitSurveyData(surveyData, token);
+
+      if (response.success) {
+        Alert.alert("성공", "설문이 완료되었습니다!", [
+          {
+            text: "확인",
+            onPress: () => {
+              router.replace("/(tabs)/home");
+            },
+          },
+        ]);
+      } else {
+        Alert.alert("오류", response.error || "설문 제출에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("설문 제출 오류:", error);
+      Alert.alert("오류", "네트워크 오류가 발생했습니다.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleNext = () => {
     if (canProceed()) {
       if (currentStep === surveyQuestions.length - 1) {
-        // 마지막 단계에서 완료 버튼을 누르면 홈으로 이동
-        router.replace("/(tabs)/home");
+        // 마지막 단계에서 완료 버튼을 누르면 설문 데이터 전송
+        submitSurveyData();
       } else {
         setCurrentStep(currentStep + 1);
       }
@@ -183,8 +309,18 @@ export default function Survey() {
     }
   };
 
+  // 로딩 중이면 로딩 화면 표시
+  if (isLoading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-gray-100">
+        <Text className="text-lg">인증 확인 중...</Text>
+      </View>
+    );
+  }
+
   return (
-    <View className="flex-1 justify-start items-center bg-gray-100 p-8">
+    <View className="flex-1 justify-start items-center bg-gray-100 p-8 pt-24">
+      <AlertDialogPreview />
       <View className="w-full max-w-sm">
         <Text className="text-lg font-bold text-center mb-4">설문 진행률</Text>
         <ProgressBar progress={progress} color="bg-green-500" />
@@ -248,13 +384,17 @@ export default function Survey() {
 
             <TouchableOpacity
               onPress={handleNext}
-              disabled={!canProceed()}
+              disabled={!canProceed() || isSubmitting}
               className={`px-6 py-3 rounded-lg ${
-                !canProceed() ? "bg-gray-300" : "bg-blue-500"
+                !canProceed() || isSubmitting ? "bg-gray-300" : "bg-blue-500"
               }`}
             >
               <Text className="text-white font-bold">
-                {currentStep === surveyQuestions.length - 1 ? "완료" : "다음"}
+                {isSubmitting
+                  ? "제출 중..."
+                  : currentStep === surveyQuestions.length - 1
+                    ? "완료"
+                    : "다음"}
               </Text>
             </TouchableOpacity>
           </View>

@@ -8,17 +8,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { authService, LoginRequest } from "../../services/authService";
+import {
+  authService,
+  LoginRequest,
+  ServerUserDataResponse,
+} from "../../services/authService";
 import { StorageService } from "../../utils/storage";
 
 const Form = () => {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
   const handleLogin = async () => {
-    if (!email || !password) {
+    if (!id || !password) {
       Alert.alert("오류", "이메일과 비밀번호를 입력해주세요.");
       return;
     }
@@ -27,43 +30,76 @@ const Form = () => {
 
     try {
       const loginData: LoginRequest = {
-        email: email.trim(),
+        id: id,
         password: password,
       };
 
       const response = await authService.login(loginData);
 
       if (response.success && response.data) {
-        // 토큰과 사용자 정보 저장 (안전하게 처리)
-        if (response.data?.token) {
-          await StorageService.setAuthToken(response.data.token);
+        // 쿠키에서 토큰 추출
+        let token = null;
+        if (response.headers?.map?.["set-cookie"]) {
+          const cookieHeader = response.headers.map["set-cookie"];
+          // access_token=... 부분 추출
+          const tokenMatch = cookieHeader.match(/access_token=([^;]+)/);
+          if (tokenMatch) {
+            token = tokenMatch[1];
+          }
         }
+
+        // 토큰 저장
+        if (token) {
+          await StorageService.setAuthToken(token);
+        }
+
         if (response.data?.user) {
           await StorageService.setUserData(response.data.user);
         }
 
         // 사용자 초기 정보 가져오기
+        let hasInitialInfo = false;
         try {
-          const userInfoResponse = await authService.getUserInitialInfo(
-            response.data.token
-          );
-          if (userInfoResponse.success && userInfoResponse.data) {
+          const userInfoResponse = await authService.getUserInitialInfo(token);
+          console.log("사용자 초기 정보 응답:", userInfoResponse);
+
+          // 응답 구조 확인 및 적절한 데이터 추출
+          if (
+            userInfoResponse &&
+            userInfoResponse.success &&
+            userInfoResponse.data
+          ) {
+            const serverData: ServerUserDataResponse = userInfoResponse.data;
+
+            // 서버 응답을 UserInitialInfo 형식으로 매핑
+            const userInfo = {
+              gender: serverData.gender || "",
+              age: serverData.user_age || 0,
+              height: serverData.height || 0,
+              weight: serverData.weight || 0,
+              activity_level: serverData.activity_level || "",
+              goal: serverData.diet_goal || "",
+              preferred_food: "",
+              allergies: [],
+              eat_level: {
+                breakfast: "",
+                lunch: "",
+                dinner: "",
+              },
+            };
+
+            console.log("매핑된 사용자 정보:", userInfo);
+
             // 사용자 초기 정보 저장
-            await StorageService.setUserInitialInfo(
-              userInfoResponse.data.user_info
-            );
-            console.log(
-              "사용자 초기 정보 저장 완료:",
-              userInfoResponse.data.user_info
-            );
+            await StorageService.setUserInitialInfo(userInfo);
+            hasInitialInfo = true;
           } else {
-            console.log(
-              "사용자 초기 정보 가져오기 실패:",
-              userInfoResponse.error
-            );
+            console.log("사용자 초기 정보 없음 또는 응답이 예상과 다름");
+            hasInitialInfo = false;
           }
         } catch (error) {
-          console.log("사용자 초기 정보 가져오기 중 오류:", error);
+          console.error("사용자 초기 정보 가져오기 실패:", error);
+          hasInitialInfo = false;
         }
 
         // 로그인 성공
@@ -71,8 +107,12 @@ const Form = () => {
           {
             text: "확인",
             onPress: () => {
-              // 메인 화면으로 이동
-              router.replace("/(tabs)/home");
+              // 초기 정보가 있으면 홈으로, 없으면 설문으로 이동
+              if (hasInitialInfo) {
+                router.replace("/(tabs)/home");
+              } else {
+                router.replace("/survey");
+              }
             },
           },
         ]);
@@ -97,13 +137,13 @@ const Form = () => {
           <View className="space-y-4">
             <View className="pb-2">
               <Text className="text-sm font-medium text-gray-700">
-                이메일 <Text className="text-red-600">*</Text>
+                아이디 <Text className="text-red-600">*</Text>
               </Text>
               <TextInput
-                placeholder="name@example.com"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={setEmail}
+                placeholder="ID"
+                keyboardType="default"
+                value={id}
+                onChangeText={setId}
                 className="w-full px-3 py-2 border border-gray-300 rounded mt-1"
               />
             </View>

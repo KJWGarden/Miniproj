@@ -57,7 +57,7 @@ export default function WelcomeScreen() {
           className="w-full max-w-sm px-8"
         >
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/home")} //임시 개발용 수정해야함
+            onPress={() => router.push("/login")} //임시 개발용 수정해야함
             className="bg-white py-4 rounded-xl mb-4 shadow-lg"
           >
             <Text className="text-blue-500 text-center font-bold text-lg">

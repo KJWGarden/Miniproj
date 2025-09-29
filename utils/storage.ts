@@ -15,7 +15,8 @@ export class StorageService {
   // 토큰 가져오기
   static async getAuthToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem("authToken");
+      const token = await AsyncStorage.getItem("authToken");
+      return token;
     } catch (error) {
       console.error("토큰 가져오기 실패:", error);
       return null;
@@ -56,6 +57,12 @@ export class StorageService {
     userInitialInfo: UserInitialInfo
   ): Promise<void> {
     try {
+      // null이나 undefined 값 체크
+      if (!userInitialInfo) {
+        console.warn("사용자 초기 정보가 null 또는 undefined입니다.");
+        return;
+      }
+
       await AsyncStorage.setItem(
         "userInitialInfo",
         JSON.stringify(userInitialInfo)
