@@ -83,10 +83,88 @@ export class StorageService {
     }
   }
 
+  // 설문 완료 여부 저장
+  static async setSurveyCompleted(completed: boolean): Promise<void> {
+    try {
+      await AsyncStorage.setItem("surveyCompleted", JSON.stringify(completed));
+    } catch (error) {
+      console.error("설문 완료 상태 저장 실패:", error);
+    }
+  }
+
+  // 설문 완료 여부 확인
+  static async getSurveyCompleted(): Promise<boolean> {
+    try {
+      const completed = await AsyncStorage.getItem("surveyCompleted");
+      return completed ? JSON.parse(completed) : false;
+    } catch (error) {
+      console.error("설문 완료 상태 확인 실패:", error);
+      return false;
+    }
+  }
+
+  // 사용자 음식 데이터 저장
+  static async setUserEatData(userEatData: any): Promise<void> {
+    try {
+      await AsyncStorage.setItem("userEatData", JSON.stringify(userEatData));
+    } catch (error) {
+      console.error("사용자 음식 데이터 저장 실패:", error);
+    }
+  }
+
+  // 사용자 음식 데이터 가져오기
+  static async getUserEatData(): Promise<any | null> {
+    try {
+      const userEatData = await AsyncStorage.getItem("userEatData");
+      return userEatData ? JSON.parse(userEatData) : null;
+    } catch (error) {
+      console.error("사용자 음식 데이터 가져오기 실패:", error);
+      return null;
+    }
+  }
+
+  // 식단 추천 데이터 저장
+  static async setDietRecommendations(recommendations: any[]): Promise<void> {
+    try {
+      await AsyncStorage.setItem(
+        "dietRecommendations",
+        JSON.stringify(recommendations)
+      );
+    } catch (error) {
+      console.error("식단 추천 데이터 저장 실패:", error);
+    }
+  }
+
+  // 식단 추천 데이터 가져오기
+  static async getDietRecommendations(): Promise<any[] | null> {
+    try {
+      const data = await AsyncStorage.getItem("dietRecommendations");
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error("식단 추천 데이터 가져오기 실패:", error);
+      return null;
+    }
+  }
+
+  // 식단 추천 데이터 삭제
+  static async removeDietRecommendations(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem("dietRecommendations");
+    } catch (error) {
+      console.error("식단 추천 데이터 삭제 실패:", error);
+    }
+  }
+
   // 로그아웃 (모든 데이터 삭제)
   static async clearAll(): Promise<void> {
     try {
-      await AsyncStorage.multiRemove(["authToken", "users", "userInitialInfo"]);
+      await AsyncStorage.multiRemove([
+        "authToken",
+        "users",
+        "userInitialInfo",
+        "surveyCompleted",
+        "dietRecommendations",
+      ]);
     } catch (error) {
       console.error("데이터 삭제 실패:", error);
     }

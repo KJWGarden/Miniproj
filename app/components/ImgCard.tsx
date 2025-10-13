@@ -10,11 +10,22 @@ const Card = (props: {
   image: any;
   calories: number;
   id: number;
+  recommendation_id?: number;
 }) => {
   const router = useRouter();
 
   const handlePress = () => {
-    router.push(`/(pages)/recommend/${props.id}`);
+    // recommendation_id가 있으면 그것을 사용, 없으면 id 사용
+    const targetId = props.recommendation_id || props.id;
+    console.log(
+      "ImgCard 클릭 - targetId:",
+      targetId,
+      "recommendation_id:",
+      props.recommendation_id,
+      "id:",
+      props.id
+    );
+    router.push(`/(pages)/recommend/${targetId}`);
   };
 
   return (
@@ -48,14 +59,14 @@ const Card = (props: {
                 borderBottomRightRadius: 24,
               }}
             >
-              <TouchableOpacity>
+              <View>
                 <Text className="text-2xl font-bold text-white">
                   {props.title}
                 </Text>
                 <Text className="mt-1 text-md font-light text-white">
                   {props.subtitle}
                 </Text>
-              </TouchableOpacity>
+              </View>
             </LinearGradient>
           </View>
         </ImageBackground>

@@ -51,7 +51,8 @@
       "router": {},
       "eas": {
         "projectId": "4c48504b-4d1c-4894-90f3-7ace3fc5b948"
-      }
+      },
+      "apiBaseUrl": "http://localhost:8000"
     },
     "owner": "kimgarden"
   }

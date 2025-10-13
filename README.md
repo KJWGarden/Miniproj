@@ -10,17 +10,24 @@ REACT NATIVE 기반 모바일 플랫폼
 
 ## 환경 설정
 
-### API 설정
+### API 설정 방법
 
-```typescript
-const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:8000";
+API URL은 `app.json` 파일에서 설정합니다:
+
+1. `app.json`의 `extra` 섹션에서 API URL을 수정하세요:
+
+```json
+{
+  "expo": {
+    "extra": {
+      "apiBaseUrl": "http://your-api-server-url:port"
+    }
+  }
+}
 ```
+
+2. 기본값은 `http://localhost:8000`입니다.
 
 ### 개발 환경 설정
 
-1. 프로젝트 루트에 `.env` 파일을 생성하세요
-2. 다음 내용을 추가하세요:
-
-```
-API_BASE_URL=http://your-api-server-url:port
-```
+프로덕션 환경에서는 `app.json`의 `apiBaseUrl`을 실제 서버 URL로 변경하세요.

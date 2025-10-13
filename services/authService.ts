@@ -55,7 +55,8 @@ export interface UserInitialInfoResponse {
 // 실제 서버 응답 타입 (임시)
 export interface ServerUserDataResponse {
   gender: string;
-  user_age: number | null;
+  age?: number;
+  user_age?: number | null;
   height: number;
   weight: number;
   activity_level: string;
@@ -67,6 +68,20 @@ export interface ServerUserDataResponse {
   user_id: string;
   user_name: string;
   user_no: number;
+  preferred_food?: string;
+  allergies?: string[];
+  eat_level?: {
+    breakfast: string;
+    lunch: string;
+    dinner: string;
+  };
+}
+
+export interface UserProfile {
+  gender: string;
+  age: number;
+  height: number;
+  weight: number;
 }
 
 // 설문 데이터 타입
@@ -86,6 +101,12 @@ export interface SurveyData {
 export interface SurveyResponse {
   success: boolean;
   message?: string;
+}
+
+export interface UserProfileResponse {
+  success: boolean;
+  message?: string;
+  data?: UserProfile;
 }
 
 export class AuthService {
@@ -135,6 +156,14 @@ export class AuthService {
         },
       }
     );
+  }
+
+  async getUserProfile(token: string) {
+    return await apiClient.get<UserProfile>("/users/profile/info", {
+      headers: {
+        Authorization: `${token}`,
+      },
+    });
   }
 
   // 설문 데이터 전송 (users/initial/info 엔드포인트로 PATCH)

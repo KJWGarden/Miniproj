@@ -1,19 +1,34 @@
 import { Feather } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { foodAnalysisApi } from "../../utils/api";
+import { StorageService } from "../../utils/storage";
 
 interface Message {
   id: string;
   text: string;
   isUser: boolean;
   timestamp: Date;
+  foodAnalysis?: {
+    food_name: string;
+    youtube_link: string;
+    ingredients: string[];
+    recipe: string[];
+  };
 }
 
 export default function AIChatScreen() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      text: "안녕하세요! 무엇을 도와드릴까요?",
+      text: "안녕하세요! 음식명을 입력하면 재료와 레시피 정보를 알려드릴게요. 어떤 음식을 알고 싶으신가요?",
       isUser: false,
       timestamp: new Date(),
     },
@@ -42,20 +57,82 @@ export default function AIChatScreen() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const userInput = inputText.trim();
     setInputText("");
     setIsTyping(true);
 
-    // AI 응답 시뮬레이션 (실제로는 API 호출)
-    setTimeout(() => {
-      const aiResponse: Message = {
+    try {
+      // 음식 분석 API 호출
+      const token = await StorageService.getAuthToken();
+
+      if (!token) {
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: "로그인이 필요합니다. 먼저 로그인해주세요.",
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        setIsTyping(false);
+        return;
+      }
+
+      console.log("음식 분석 요청:", {
+        userInput,
+        token: token ? `${token.substring(0, 20)}...` : "토큰 없음",
+      });
+
+      const response = await foodAnalysisApi.analyzeFoodByName(
+        userInput,
+        token
+      );
+
+      console.log("음식 분석 응답:", response);
+
+      if (response.success && response.data) {
+        // analyzed_foods 배열에서 첫 번째 음식 정보 사용
+        const analyzedFoods = response.data.analyzed_foods;
+
+        if (analyzedFoods && analyzedFoods.length > 0) {
+          const foodData = analyzedFoods[0];
+          const aiResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            text: `${foodData.food_name}에 대한 정보입니다.`,
+            isUser: false,
+            timestamp: new Date(),
+            foodAnalysis: foodData,
+          };
+          setMessages((prev) => [...prev, aiResponse]);
+        } else {
+          const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            text: `"${userInput}"에 대한 정보를 찾을 수 없습니다.`,
+            isUser: false,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, errorMessage]);
+        }
+      } else {
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: `"${userInput}"에 대한 정보를 찾을 수 없습니다. 다른 음식명을 시도해보세요.`,
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error("음식 분석 오류:", error);
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: `"${inputText}"에 대한 답변입니다. 실제 AI API를 연결하면 더 정확한 답변을 받을 수 있습니다.`,
+        text: "음식 분석 중 오류가 발생했습니다. 다시 시도해주세요.",
         isUser: false,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, aiResponse]);
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
+    }
   };
 
   const formatTime = (date: Date) => {
@@ -72,7 +149,7 @@ export default function AIChatScreen() {
         <View className="flex-row items-center space-x-2">
           <TextInput
             className="flex-1 border border-gray-300 rounded-full px-4 py-3 bg-gray-50"
-            placeholder="메시지를 입력하세요..."
+            placeholder="음식명을 입력하세요 (예: 김치찌개, 비빔밥, 파스타...)"
             value={inputText}
             onChangeText={setInputText}
             multiline
@@ -115,7 +192,7 @@ export default function AIChatScreen() {
             className={`mb-4 ${message.isUser ? "items-end" : "items-start"}`}
           >
             <View
-              className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+              className={`max-w-[90%] px-4 py-3 rounded-2xl ${
                 message.isUser
                   ? "bg-blue-500 rounded-br-md"
                   : "bg-white rounded-bl-md border border-gray-200"
@@ -128,6 +205,73 @@ export default function AIChatScreen() {
               >
                 {message.text}
               </Text>
+
+              {/* 음식 분석 결과 표시 */}
+              {message.foodAnalysis && (
+                <View className="mt-3 pt-3 border-t border-gray-200">
+                  <Text className="text-lg font-bold text-gray-800 mb-2">
+                    {message.foodAnalysis.food_name || "음식 정보"}
+                  </Text>
+
+                  {/* 유튜브 링크 */}
+                  {message.foodAnalysis.youtube_link && (
+                    <View className="mb-3">
+                      <Text className="text-sm font-semibold text-gray-700 mb-1">
+                        요리 영상
+                      </Text>
+                      <Text
+                        className="text-sm text-blue-600 underline"
+                        onPress={() => {
+                          // 유튜브 링크 열기
+                          Linking.openURL(
+                            message.foodAnalysis.youtube_link
+                          ).catch((err) => {
+                            console.error("링크 열기 실패:", err);
+                          });
+                        }}
+                      >
+                        📺 유튜브에서 요리법 보기
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* 재료 정보 */}
+                  {message.foodAnalysis.ingredients &&
+                    message.foodAnalysis.ingredients.length > 0 && (
+                      <View className="mb-3">
+                        <Text className="text-sm font-semibold text-gray-700 mb-1">
+                          재료
+                        </Text>
+                        {message.foodAnalysis.ingredients.map(
+                          (ingredient, index) => (
+                            <Text key={index} className="text-sm text-gray-600">
+                              • {ingredient}
+                            </Text>
+                          )
+                        )}
+                      </View>
+                    )}
+
+                  {/* 레시피 정보 */}
+                  {message.foodAnalysis.recipe &&
+                    message.foodAnalysis.recipe.length > 0 && (
+                      <View className="mb-3">
+                        <Text className="text-sm font-semibold text-gray-700 mb-1">
+                          레시피
+                        </Text>
+                        {message.foodAnalysis.recipe.map((step, index) => (
+                          <Text
+                            key={index}
+                            className="text-sm text-gray-600 mb-1"
+                          >
+                            {index + 1}. {step}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+                </View>
+              )}
+
               <Text
                 className={`text-xs mt-1 ${
                   message.isUser ? "text-blue-100" : "text-gray-500"

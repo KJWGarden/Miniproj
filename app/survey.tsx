@@ -236,6 +236,10 @@ export default function Survey() {
         dinner: eatLevelData.dinner || "",
       };
 
+      // 알레르기 정보 처리
+      const allergiesAnswer = answers[6] || "";
+      const allergies = allergiesAnswer === "없음" ? [] : [allergiesAnswer];
+
       return {
         gender,
         age,
@@ -243,8 +247,8 @@ export default function Survey() {
         weight,
         activity_level,
         goal: "", // 설문에 없으므로 빈 문자열
-        preferred_food: "", // 설문에 없으므로 빈 배열
-        allergies: [""], // 설문에 없으므로 빈 배열
+        preferred_food: "", // 설문에 없으므로 빈 문자열
+        allergies, // 알레르기 정보 처리
         eat_level,
       };
     } catch (error) {
@@ -270,9 +274,33 @@ export default function Survey() {
         return;
       }
 
+      // 설문 데이터 유효성 검사
+      const isValidSurveyData =
+        surveyData.gender &&
+        surveyData.age > 0 &&
+        surveyData.height > 0 &&
+        surveyData.weight > 0;
+
+      if (!isValidSurveyData) {
+        Alert.alert(
+          "오류",
+          "설문 데이터가 불완전합니다. 성별, 나이, 키, 몸무게를 확인해주세요."
+        );
+        return;
+      }
+
       const response = await authService.submitSurveyData(surveyData, token);
 
       if (response.success) {
+        // 서버에 제출한 설문 데이터를 로컬 스토리지에 저장
+        const surveyData = transformSurveyData();
+        if (surveyData) {
+          await StorageService.setUserInitialInfo(surveyData);
+        }
+
+        // 설문 완료 상태 저장
+        await StorageService.setSurveyCompleted(true);
+
         Alert.alert("성공", "설문이 완료되었습니다!", [
           {
             text: "확인",
